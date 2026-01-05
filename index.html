@@ -2,72 +2,84 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Russell Vector Mapper</title>
+    <title>Circumlex Model of Affect</title>
     <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #ffffff; color: #111; display: flex; margin: 0; height: 100vh; }
-        #sidebar { width: 360px; background: #fdffdf; padding: 25px; border-right: 1px solid #ddd; overflow-y: auto; height: 100%; box-shadow: inset -5px 0 10px rgba(0,0,0,0.02); }
-        #viewer { flex-grow: 1; display: flex; justify-content: center; align-items: center; background: #fff; position: relative; }
-        canvas { background: #fff; }
-        .input-group { margin-bottom: 15px; background: #fff; padding: 12px; border: 1px solid #eee; border-radius: 4px; }
-        label { display: block; font-size: 0.7em; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 5px; }
-        input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box; }
-        .btn-add { width: 100%; padding: 12px; background: #000; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
-        .emotion-card { display: flex; align-items: center; background: #fff; padding: 10px; margin-top: 8px; border: 1px solid #eee; border-left: 5px solid var(--c); font-size: 0.85em; }
-        .remove-btn { margin-left: auto; color: red; cursor: pointer; font-weight: bold; }
-        .save-btn { margin-top: 20px; background: none; border: 1px solid #000; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
-        .desc { font-size: 0.65em; color: #888; margin-top: 4px; font-style: italic; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #ffffff; color: #1a1a1a; display: flex; margin: 0; height: 100vh; }
+        #sidebar { width: 380px; background: #fafafa; padding: 25px; border-right: 1px solid #e0e0e0; overflow-y: auto; height: 100%; box-sizing: border-box; }
+        #viewer { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; position: relative; }
+        canvas { background: #fff; box-shadow: 0 0 40px rgba(0,0,0,0.03); border-radius: 50%; }
+        .input-group { margin-bottom: 12px; background: #fff; padding: 12px; border: 1px solid #eee; border-radius: 8px; }
+        label { display: block; font-size: 0.7rem; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 6px; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: monospace; }
+        .btn-add { width: 100%; padding: 14px; background: #111; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.2s; }
+        .btn-add:hover { background: #333; }
+        .emotion-card { display: flex; align-items: center; background: #fff; padding: 10px; margin-top: 8px; border: 1px solid #eee; border-radius: 6px; border-left: 4px solid var(--c); font-size: 0.85rem; }
+        .remove-btn { margin-left: auto; color: #ff4444; cursor: pointer; font-weight: bold; padding: 0 5px; }
+        .toggle-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-util { flex: 1; background: #eee; border: none; padding: 8px; font-size: 0.7rem; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        .desc { font-size: 0.65rem; color: #999; margin-top: 5px; line-height: 1.3; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2 style="font-size: 1.2em; border-bottom: 2px solid #000; padding-bottom: 10px;">Vector Input</h2>
+    <h2 style="font-size: 1.1rem; margin-top: 0; border-bottom: 2px solid #111; padding-bottom: 10px;">Vector Calibration</h2>
     
     <div class="input-group">
         <label>Affective Label</label>
-        <input type="text" id="name" placeholder="e.g., Happy">
+        <input type="text" id="name" placeholder="e.g. Alarmed">
     </div>
 
     <div class="input-group">
-        <label>Angle (θ: 0-360°)</label>
+        <label>Angular Quality (θ: 0-360°)</label>
         <input type="number" id="angle" value="0">
-        <div class="desc">The "Hue" or Quality of the emotion.</div>
+        <div class="desc">0°=Pleasure, 90°=Arousal, 180°=Displeasure, 270°=Sleep.</div>
     </div>
 
     <div class="input-group">
-        <label>Consensus (P-Value: 0.0 - 1.0)</label>
-        <input type="number" id="p_val" value="0.8" step="0.05" min="0" max="1">
-        <div class="desc">Vector Length. High P = Clear Definition (Perimeter).</div>
+        <label>Precision / Length (P: 0.0 - 1.0)</label>
+        <input type="number" id="p_val" value="0.8" step="0.01" min="0" max="1">
+        <div class="desc">Distance from neutral origin. Measures consensus/intensity.</div>
     </div>
 
     <div class="input-group">
-        <label>Fuzziness (Overlap Radius)</label>
-        <input type="range" id="fuzz" min="10" max="100" value="40">
-        <div class="desc">Visualizes the "Fuzzy Set" overlap.</div>
+        <label>Fuzzy Set Radius (Overlap)</label>
+        <input type="range" id="fuzz" min="5" max="80" value="30">
+        <div class="desc">Simulates the conceptual overlap with neighbors.</div>
     </div>
 
     <div class="input-group">
-        <label>Color</label>
-        <input type="color" id="color" value="#3366ff">
+        <label>Visual Spectral Code</label>
+        <input type="color" id="color" value="#000000" style="height:30px; padding:2px;">
     </div>
 
-    <button class="btn-add" onclick="addEmotion()">PLOT VECTOR</button>
+    <button class="btn-add" onclick="addEmotion()">PROJECT VECTOR</button>
 
-    <div id="list" style="margin-top: 30px;"></div>
-    <button class="save-btn" onclick="saveImage()">SAVE MAP (.PNG)</button>
+    <div class="toggle-group">
+        <button class="btn-util" onclick="toggleGrid()">TOGGLE GRID</button>
+        <button class="btn-util" onclick="toggleRotation()">ROTATE 45°</button>
+    </div>
+
+    <div id="list" style="margin-top: 25px;"></div>
+    <button class="btn-util" style="width:100%; margin-top:20px; background:#111; color:#fff;" onclick="saveImage()">DOWNLOAD PNG</button>
 </div>
 
 <div id="viewer">
     <canvas id="canvas"></canvas>
+    <div style="margin-top: 30px; color: #ccc; font-size: 0.6rem; letter-spacing: 4px; font-weight: 800; text-transform: uppercase;">
+        Uniform Affective Representation Logic
+    </div>
 </div>
 
 <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     let emotions = [];
+    let showGrid = true;
+    let rotated = false;
 
     function resize() {
-        const size = Math.min(window.innerWidth - 420, window.innerHeight - 100);
+        const size = Math.min(window.innerWidth - 450, window.innerHeight - 150);
         canvas.width = size;
         canvas.height = size;
         draw();
@@ -90,6 +102,9 @@
         draw();
     }
 
+    function toggleGrid() { showGrid = !showGrid; draw(); }
+    function toggleRotation() { rotated = !rotated; draw(); }
+
     function updateUI() {
         const list = document.getElementById('list');
         list.innerHTML = '';
@@ -98,94 +113,99 @@
             div.className = 'emotion-card';
             div.style.setProperty('--c', e.color);
             div.innerHTML = `
-                <input type="checkbox" ${e.visible ? 'checked' : ''} onchange="toggle(${e.id})">
-                <strong>${e.name}</strong> <span style="margin-left:8px; color:#999;">${e.angle}° (P:${e.p})</span>
-                <span class="remove-btn" onclick="remove(${e.id})">×</span>
+                <input type="checkbox" ${e.visible ? 'checked' : ''} onchange="toggleVis(${e.id})">
+                <span style="flex:1"><strong>${e.name}</strong></span>
+                <span style="color:#999; font-size:0.7rem">${e.angle}° | P:${e.p}</span>
+                <span class="remove-btn" onclick="removeE(${e.id})">×</span>
             `;
             list.appendChild(div);
         });
     }
 
-    function toggle(id) {
-        const e = emotions.find(x => x.id === id);
-        e.visible = !e.visible;
-        draw();
-    }
-
-    function remove(id) {
-        emotions = emotions.filter(x => x.id !== id);
-        updateUI();
-        draw();
-    }
+    function toggleVis(id) { const e = emotions.find(x => x.id === id); e.visible = !e.visible; draw(); }
+    function removeE(id) { emotions = emotions.filter(x => x.id !== id); updateUI(); draw(); }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
-        const radius = canvas.width * 0.4;
+        const radius = canvas.width * 0.42;
 
-        // Draw Neutral Grid
-        ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx-radius, cy); ctx.lineTo(cx+radius, cy); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx, cy-radius); ctx.lineTo(cx, cy+radius); ctx.stroke();
+        // 1. GRID INFRASTRUCTURE
+        if (showGrid) {
+            ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth = 1;
+            // Primary Circles
+            [0.25, 0.5, 0.75, 1.0].forEach(p => {
+                ctx.beginPath(); ctx.arc(cx, cy, radius * p, 0, Math.PI*2); ctx.stroke();
+            });
 
-        ctx.fillStyle = '#bbb'; ctx.font = 'bold 10px Arial';
-        ctx.fillText('HIGH AROUSAL', cx - 35, cy - radius - 10);
-        ctx.fillText('LOW AROUSAL', cx - 35, cy + radius + 20);
-        ctx.fillText('PLEASURE', cx + radius + 10, cy + 4);
-        ctx.fillText('DISPLEASURE', cx - radius - 80, cy + 4);
+            // Bipolar Axes (X & Y)
+            ctx.strokeStyle = '#e8e8e8';
+            ctx.beginPath(); ctx.moveTo(cx-radius, cy); ctx.lineTo(cx+radius, cy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy-radius); ctx.lineTo(cx, cy+radius); ctx.stroke();
 
+            // Rotated Dimensions (45°)
+            if (rotated) {
+                ctx.strokeStyle = '#fdeeee';
+                ctx.setLineDash([4, 4]);
+                for (let i = 0; i < 4; i++) {
+                    const ang = (Math.PI/4) + (i * Math.PI/2);
+                    ctx.beginPath(); ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + Math.cos(ang)*radius, cy + Math.sin(ang)*radius);
+                    ctx.stroke();
+                }
+                ctx.setLineDash([]);
+            }
+        }
+
+        // 2. TEXT LABELS
+        ctx.fillStyle = '#bbb'; ctx.font = 'bold 9px Inter';
+        ctx.fillText('PLEASURE', cx + radius + 10, cy + 3);
+        ctx.fillText('DISPLEASURE', cx - radius - 75, cy + 3);
+        ctx.fillText('AROUSAL', cx - 22, cy - radius - 15);
+        ctx.fillText('SLEEPINESS', cx - 28, cy + radius + 25);
+
+        // 3. EMOTION VECTORS
         emotions.forEach(e => {
             if (!e.visible) return;
-            const rad = (e.angle * Math.PI) / 180;
-            const vLen = radius * e.p; // Length is determined by P-Value
-            const targetX = cx + Math.cos(rad) * vLen;
-            const targetY = cy + Math.sin(rad) * vLen;
-
-            // 1. Draw Fuzzy Set (The Disk Gradient)
-            const fuzzGrad = ctx.createRadialGradient(targetX, targetY, 0, targetX, targetY, e.fuzz);
-            fuzzGrad.addColorStop(0, e.color + '66'); // 40% opacity
-            fuzzGrad.addColorStop(1, 'transparent');
             
-            ctx.fillStyle = fuzzGrad;
-            ctx.beginPath();
-            ctx.arc(targetX, targetY, e.fuzz, 0, Math.PI*2);
-            ctx.fill();
+            // Adjusting angle: Russell's 0 is at 'Pleasure' (East). 
+            // Canvas math: 0 is East. We don't need to subtract 90 unless we want North=0.
+            // However, browsers count clockwise. Russell counts counter-clockwise from East.
+            // We multiply angle by -1 to match standard mathematical/research rotation.
+            const rad = (e.angle * Math.PI) / 180 * -1;
+            
+            const vLen = radius * e.p;
+            const tx = cx + Math.cos(rad) * vLen;
+            const ty = cy + Math.sin(rad) * vLen;
 
-            // 2. Draw Vector Line
-            ctx.strokeStyle = e.color;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([2, 2]); // Dotted to represent theoretical vector
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.lineTo(targetX, targetY);
-            ctx.stroke();
-            ctx.setLineDash([]);
+            // Fuzzy Set Disk
+            const grad = ctx.createRadialGradient(tx, ty, 0, tx, ty, e.fuzz);
+            grad.addColorStop(0, e.color + '44');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(tx, ty, e.fuzz, 0, Math.PI*2); ctx.fill();
 
-            // 3. Draw Point
+            // Vector Line
+            ctx.strokeStyle = e.color; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tx, ty); ctx.stroke();
+
+            // Point
             ctx.fillStyle = e.color;
-            ctx.beginPath();
-            ctx.arc(targetX, targetY, 4, 0, Math.PI*2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(tx, ty, 4, 0, Math.PI*2); ctx.fill();
 
-            // 4. Label
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText(e.name.toUpperCase(), targetX + 10, targetY - 10);
+            // Label
+            ctx.fillStyle = '#111'; ctx.font = 'bold 11px Inter';
+            ctx.fillText(e.name.toUpperCase(), tx + 8, ty - 8);
         });
     }
 
     function saveImage() {
         const link = document.createElement('a');
-        link.download = 'russell.png';
+        link.download = 'russell_map.png';
         link.href = canvas.toDataURL();
         link.click();
     }
-</script>
-
-</body>
-</html>
 </script>
 </body>
 </html>
