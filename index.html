@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UARL Perceptual Mapper</title>
+    <style>
+        body { font-family: 'Courier New', monospace; background: #050508; color: #00ffcc; display: flex; padding: 0; margin: 0; height: 100vh; overflow: hidden; }
+        #sidebar { width: 380px; background: #111116; padding: 25px; border-right: 1px solid #333; overflow-y: auto; height: 100%; box-shadow: 5px 0 15px rgba(0,0,0,0.5); z-index: 10; }
+        #viewer { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: radial-gradient(circle, #1a1a2e 0%, #050508 100%); }
+        canvas { border-radius: 50%; cursor: crosshair; }
+        .input-group { margin-bottom: 12px; background: #1a1a24; padding: 12px; border-radius: 6px; border: 1px solid #222; }
+        label { display: block; font-size: 0.75em; margin-bottom: 5px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        input, select { width: 100%; background: #000; border: 1px solid #333; color: #00ffcc; padding: 8px; border-radius: 4px; box-sizing: border-box; outline: none; transition: 0.2s; }
+        input:focus { border-color: #00ffcc; }
+        .btn-main { width: 100%; padding: 12px; background: #00ffcc; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; color: #000; margin-top: 5px; }
+        .btn-save { width: 100%; padding: 10px; background: transparent; border: 1px solid #00ffcc; color: #00ffcc; cursor: pointer; border-radius: 4px; margin-top: 10px; }
+        .emotion-item { display: flex; align-items: center; background: #222; margin: 8px 0; padding: 10px; border-radius: 6px; border-left: 4px solid var(--e-color); }
+        .emotion-item input[type="checkbox"] { width: auto; margin-right: 12px; cursor: pointer; }
+        .remove-btn { color: #ff3366; cursor: pointer; margin-left: auto; font-size: 1.2em; padding: 0 5px; }
+        h2 { margin-top: 0; font-size: 1.2em; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Add Intent</h2>
+    <div class="input-group">
+        <label>Name (Noun)</label>
+        <input type="text" id="newName" placeholder="e.g. Alarmed">
+    </div>
+    <div class="input-group">
+        <label>Angle (θ: 0-360)</label>
+        <input type="number" id="newAngle" value="0">
+    </div>
+    <div class="input-group">
+        <label>Precision (P-Value / Blur)</label>
+        <input type="range" id="newP" min="1" max="100" value="70">
+        <div style="display:flex; justify-content: space-between; font-size: 0.6em; color: #555;">
+            <span>FUZZY</span><span>SHARP</span>
+        </div>
+    </div>
+    <div class="input-group">
+        <label>Color (Spectral Frequency)</label>
+        <input type="color" id="newColor" value="#ff3300">
+    </div>
+    <button class="btn-main" onclick="addEmotion()">PROJECT INTO CIRCLE</button>
+
+    <h2 style="margin-top: 40px;">Active Dictionary</h2>
+    <div id="emotionList"></div>
+    <button class="btn-save" onclick="saveImage()">DOWNLOAD MAP (.PNG)</button>
+</div>
+
+<div id="viewer">
+    <canvas id="canvas"></canvas>
+    <div style="margin-top: 20px; color: #444; font-size: 0.7em; letter-spacing: 2px;">LINGUA ROBOTICA | PERCEPTUAL FIELD</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const listEl = document.getElementById('emotionList');
+    let emotions = [];
+
+    function resize() {
+        const size = Math.min(window.innerWidth - 450, window.innerHeight - 150);
+        canvas.width = size;
+        canvas.height = size;
+        draw();
+    }
+    window.onresize = resize;
+    resize();
+
+    function addEmotion() {
+        const e = {
+            id: Date.now(),
+            name: document.getElementById('newName').value || 'Unknown',
+            angle: parseFloat(document.getElementById('newAngle').value),
+            p: parseFloat(document.getElementById('newP').value),
+            color: document.getElementById('newColor').value,
+            visible: true
+        };
+        emotions.push(e);
+        updateSidebar();
+        draw();
+    }
+
+    function updateSidebar() {
+        listEl.innerHTML = '';
+        emotions.forEach(e => {
+            const div = document.createElement('div');
+            div.className = 'emotion-item';
+            div.style.setProperty('--e-color', e.color);
+            div.innerHTML = `
+                <input type="checkbox" ${e.visible ? 'checked' : ''} onchange="toggle(${e.id})">
+                <span style="color:#eee">${e.name}</span>
+                <span class="remove-btn" onclick="remove(${e.id})">×</span>
+            `;
+            listEl.appendChild(div);
+        });
+    }
+
+    function toggle(id) {
+        const e = emotions.find(x => x.id === id);
+        e.visible = !e.visible;
+        draw();
+    }
+
+    function remove(id) {
+        emotions = emotions.filter(x => x.id !== id);
+        updateSidebar();
+        draw();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const radius = canvas.width * 0.42;
+
+        // Draw Circumplex Infrastructure
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Quadrant Axes
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(cx - radius, cy); ctx.lineTo(cx + radius, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy - radius); ctx.lineTo(cx, cy + radius); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Labeling Axes
+        ctx.fillStyle = '#444';
+        ctx.font = '10px Courier';
+        ctx.fillText('ACTIVE', cx - 18, cy - radius - 10);
+        ctx.fillText('PASSIVE', cx - 21, cy + radius + 20);
+        ctx.fillText('PLEASURE', cx + radius + 10, cy + 4);
+        ctx.fillText('DISPLEASURE', cx - radius - 80, cy + 4);
+
+        emotions.forEach(e => {
+            if (!e.visible) return;
+
+            // Math: Canvas 0 is at 3 o'clock. 
+            // We subtract 90 to put 0 at the top if desired, but standard Russell is 0 at Pleased (Right).
+            const rad = (e.angle * Math.PI) / 180;
+            const spread = (105 - e.p) / 80; // Precision mapping
+
+            // 1. Draw the "Fuzzy Set" Wedge
+            const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+            grad.addColorStop(0, 'transparent');
+            grad.addColorStop(0.5, e.color + '11');
+            grad.addColorStop(1, e.color + '66');
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, radius, rad - spread, rad + spread);
+            ctx.closePath();
+            ctx.fill();
+
+            // 2. Draw the Vector Line (The Intensity Trajectory)
+            ctx.strokeStyle = e.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(rad) * radius, cy + Math.sin(rad) * radius);
+            ctx.stroke();
+
+            // 3. Draw the Label Point
+            ctx.fillStyle = e.color;
+            ctx.beginPath();
+            ctx.arc(cx + Math.cos(rad) * radius, cy + Math.sin(rad) * radius, 4, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 13px Courier New";
+            ctx.fillText(e.name.toUpperCase(), cx + Math.cos(rad) * (radius + 15) - 20, cy + Math.sin(rad) * (radius + 15));
+        });
+    }
+
+    function saveImage() {
+        const link = document.createElement('a');
+        link.download = 'uarl_perceptual_map.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+</script>
+</body>
+</html>
