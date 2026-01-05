@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>UARL: 28-Emotion Comprehensive Mapper</title>
+    <title>UARL: Affective Boundary Mapper</title>
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; background: #ffffff; color: #111; display: flex; margin: 0; height: 100vh; overflow: hidden; }
         #sidebar { width: 400px; background: #fcfcfc; padding: 20px; border-right: 1px solid #eee; overflow-y: auto; height: 100%; box-sizing: border-box; }
@@ -36,7 +36,7 @@
     <div class="input-group">
         <label>Spread (Table 2 Categories: 2-6)</label>
         <input type="number" id="spread" value="3" min="1" max="8">
-        <div class="desc">High spread = Fuzzy/Wide. Low spread = Sharp/Narrow.</div>
+        <div class="desc">Defines the radius of the membership set.</div>
     </div>
     <div class="input-group">
         <label>Color</label>
@@ -58,7 +58,7 @@
     let emotions = [];
 
     function resize() {
-        const size = Math.min(window.innerWidth - 450, window.innerHeight - 100);
+        const size = Math.min(window.innerWidth - 450, window.innerHeight - 150);
         canvas.width = size; canvas.height = size;
         draw();
     }
@@ -101,44 +101,41 @@
         const cx = canvas.width / 2; const cy = canvas.height / 2;
         const radius = canvas.width * 0.42;
 
-        // Draw Infrastructure
+        // Draw Global Circumplex Infrastructure
         ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx-radius, cy); ctx.lineTo(cx+radius, cy); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx, cy-radius); ctx.lineTo(cx, cy+radius); ctx.stroke();
 
-        // Labels
-        ctx.fillStyle = '#ccc'; ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('PLEASURE', cx + radius + 10, cy + 4);
-        ctx.fillText('DISPLEASURE', cx - radius - 80, cy + 4);
-        ctx.fillText('AROUSAL', cx - 22, cy - radius - 15);
-        ctx.fillText('SLEEPINESS', cx - 28, cy + radius + 25);
-
-        // Blending Mode for Overlap
+        // Blending Mode for Heatmap Overlap
         ctx.globalCompositeOperation = 'multiply';
 
         emotions.forEach(e => {
             if (!e.visible) return;
-            // Standardizing Angle: 0 at East, Clockwise browser math
             const rad = (e.angle * Math.PI) / 180;
             const vLen = radius * e.p;
             const tx = cx + Math.cos(rad) * vLen;
             const ty = cy + Math.sin(rad) * vLen;
 
-            // Visualizing Spread as Fuzziness
-            // We map Spread 1-6 to a Radius of 15-70 pixels
-            const fuzzRadius = e.spread * 12;
+            // Fuzziness Mapping: spread categories * pixels
+            const fuzzRadius = e.spread * 15; 
 
+            // 1. Draw Membership Gradient (Fuzzy Set)
             const grad = ctx.createRadialGradient(tx, ty, 0, tx, ty, fuzzRadius);
-            grad.addColorStop(0, e.color + '77');
-            grad.addColorStop(0.4, e.color + '33');
+            grad.addColorStop(0, e.color + '66');
             grad.addColorStop(1, 'rgba(255,255,255,0)');
-
             ctx.fillStyle = grad;
             ctx.beginPath(); ctx.arc(tx, ty, fuzzRadius, 0, Math.PI*2); ctx.fill();
+
+            // 2. NEW: Draw Dotted Boundary Line to show "Transition Zone"
+            ctx.strokeStyle = e.color + '99';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath(); ctx.arc(tx, ty, fuzzRadius, 0, Math.PI*2); ctx.stroke();
+            ctx.setLineDash([]);
         });
 
-        // Overlay Mode for Vectors and Labels
+        // Overlay Mode for Labels and Vectors
         ctx.globalCompositeOperation = 'source-over';
         emotions.forEach(e => {
             if (!e.visible) return;
@@ -147,19 +144,19 @@
             const tx = cx + Math.cos(rad) * vLen;
             const ty = cy + Math.sin(rad) * vLen;
 
-            // Vector Line
-            ctx.strokeStyle = e.color; ctx.lineWidth = 1.5; ctx.setLineDash([2, 2]);
-            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tx, ty); ctx.stroke(); ctx.setLineDash([]);
+            // Center Point
+            ctx.fillStyle = e.color;
+            ctx.beginPath(); ctx.arc(tx, ty, 3, 0, Math.PI*2); ctx.fill();
 
             // Label
-            ctx.fillStyle = '#000'; ctx.font = 'bold 10px Inter';
-            ctx.fillText(e.name.toUpperCase(), tx + 10, ty - 5);
+            ctx.fillStyle = '#000'; ctx.font = 'bold 11px Inter';
+            ctx.fillText(e.name.toUpperCase(), tx + 12, ty - 5);
         });
     }
 
     function saveImage() {
         const link = document.createElement('a');
-        link.download = 'uarl_affective_map.png';
+        link.download = 'uarl_overlap_boundaries.png';
         link.href = canvas.toDataURL();
         link.click();
     }
