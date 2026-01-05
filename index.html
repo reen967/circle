@@ -24,6 +24,7 @@
         <h2>UARL Engine</h2>
         <button class="btn btn-primary" onclick="loadAllData()">INITIALIZE EMPIRICAL SET</button>
         <button class="btn btn-outline" onclick="toggleRotation()">ROTATE 45° (COMPLEMENTARY)</button>
+        <button class="btn btn-outline" style="border-color:#ccc; color:#999" onclick="saveImage()">DOWNLOAD PNG</button>
     </div>
     <div id="list"></div>
 </div>
@@ -49,12 +50,22 @@
     resize();
 
     function loadAllData() {
+        // Clear list first
         activeEmotions = AFFECTIVE_DATA.map(d => ({ ...d, visible: true, id: Math.random() }));
         updateUI();
         draw();
     }
 
-    function toggleRotation() { isRotated = !isRotated; draw(); }
+    function toggleRotation() { 
+        isRotated = !isRotated; 
+        draw(); 
+    }
+
+    function toggleVis(id) {
+        const em = activeEmotions.find(e => e.id === id);
+        if(em) em.visible = !em.visible;
+        draw();
+    }
 
     function updateUI() {
         const list = document.getElementById('list');
@@ -64,7 +75,7 @@
             div.className = 'emotion-card';
             div.style.borderLeft = `4px solid ${e.color}`;
             div.innerHTML = `
-                <input type="checkbox" checked onchange="toggleVis(${e.id})">
+                <input type="checkbox" ${e.visible ? 'checked' : ''} onchange="toggleVis(${e.id})">
                 <span style="flex:1; margin-left:10px;"><strong>${e.name}</strong></span>
                 <span style="color:#999">${e.angle}°</span>
             `;
@@ -78,46 +89,66 @@
         const cy = canvas.height / 2;
         const radius = canvas.width * 0.42;
 
-        // 1. Draw Grid
+        // 1. Primary Axes (Pleasure-Displeasure / Arousal-Sleep)
         ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.stroke();
+        
+        // Draw standard axes
         ctx.beginPath(); ctx.moveTo(cx-radius, cy); ctx.lineTo(cx+radius, cy); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx, cy-radius); ctx.lineTo(cx, cy+radius); ctx.stroke();
 
+        // 2. Rotated Axes (Excitement-Depression / Distress-Relaxation)
         if (isRotated) {
-            ctx.setLineDash([5, 5]); ctx.strokeStyle = '#f8e8e8';
-            for (let i = 0; i < 4; i++) {
-                let ang = (Math.PI/4) + (i * Math.PI/2);
-                ctx.beginPath(); ctx.moveTo(cx, cy);
-                ctx.lineTo(cx + Math.cos(ang)*radius, cy + Math.sin(ang)*radius); ctx.stroke();
-            }
+            ctx.strokeStyle = '#ffdede'; // Light Red for the alternative perspective
+            ctx.setLineDash([5, 5]);
+            
+            // 45 degrees and 135 degrees lines
+            [45, 135].forEach(deg => {
+                const r = (deg * Math.PI) / 180;
+                ctx.beginPath();
+                ctx.moveTo(cx - Math.cos(r)*radius, cy - Math.sin(r)*radius);
+                ctx.lineTo(cx + Math.cos(r)*radius, cy + Math.sin(r)*radius);
+                ctx.stroke();
+            });
             ctx.setLineDash([]);
+            
+            // Labels for Rotated Dimensions
+            ctx.fillStyle = '#ffaaaa'; ctx.font = '8px Inter';
+            ctx.fillText('EXCITEMENT', cx + Math.cos(Math.PI/4)*radius - 20, cy - Math.sin(Math.PI/4)*radius - 10);
+            ctx.fillText('DEPRESSION', cx - Math.cos(Math.PI/4)*radius - 20, cy + Math.sin(Math.PI/4)*radius + 20);
         }
 
-        // 2. Draw Fuzzy Sets (Multiply Blend Mode)
+        // Standard Axis Labels
+        ctx.fillStyle = '#bbb'; ctx.font = 'bold 10px Inter';
+        ctx.fillText('PLEASURE', cx + radius + 10, cy + 4);
+        ctx.fillText('DISPLEASURE', cx - radius - 80, cy + 4);
+        ctx.fillText('AROUSAL', cx - 22, cy - radius - 15);
+        ctx.fillText('SLEEPINESS', cx - 28, cy + radius + 25);
+
+        // 3. Draw Fuzzy Sets (Multiply Mode)
         ctx.globalCompositeOperation = 'multiply';
         activeEmotions.forEach(e => {
             if (!e.visible) return;
+            // Angle math: Russell 0 is East, counter-clockwise. Canvas 0 is East, clockwise.
+            // We multiply by -1 to reverse direction.
             const rad = (e.angle * Math.PI) / 180 * -1;
             const vLen = radius * e.p;
             const tx = cx + Math.cos(rad) * vLen;
             const ty = cy + Math.sin(rad) * vLen;
             const fuzzRadius = e.spread * 15;
 
-            // Membership Gradient
             const grad = ctx.createRadialGradient(tx, ty, 0, tx, ty, fuzzRadius);
             grad.addColorStop(0, e.color + '66');
             grad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = grad;
             ctx.beginPath(); ctx.arc(tx, ty, fuzzRadius, 0, Math.PI*2); ctx.fill();
 
-            // Boundary Dotted Line
             ctx.strokeStyle = e.color + '44'; ctx.setLineDash([2, 3]);
             ctx.beginPath(); ctx.arc(tx, ty, fuzzRadius, 0, Math.PI*2); ctx.stroke();
             ctx.setLineDash([]);
         });
 
-        // 3. Draw Points and Labels
+        // 4. Draw Core Points
         ctx.globalCompositeOperation = 'source-over';
         activeEmotions.forEach(e => {
             if (!e.visible) return;
@@ -136,11 +167,10 @@
 
     function saveImage() {
         const link = document.createElement('a');
-        link.download = 'uarl_perceptual_disk.png';
+        link.download = 'uarl_scientific_map.png';
         link.href = canvas.toDataURL();
         link.click();
     }
 </script>
-
 </body>
 </html>
