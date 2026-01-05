@@ -2,164 +2,145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>UARL: Affective Boundary Mapper</title>
+    <title>UARL | Russell Circumplex Engine</title>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; background: #ffffff; color: #111; display: flex; margin: 0; height: 100vh; overflow: hidden; }
-        #sidebar { width: 400px; background: #fcfcfc; padding: 20px; border-right: 1px solid #eee; overflow-y: auto; height: 100%; box-sizing: border-box; }
-        #viewer { flex-grow: 1; display: flex; justify-content: center; align-items: center; background: #fff; }
-        .input-group { margin-bottom: 12px; background: #fff; padding: 12px; border: 1px solid #f0f0f0; border-radius: 8px; }
-        label { display: block; font-size: 0.65rem; font-weight: 800; color: #777; text-transform: uppercase; margin-bottom: 5px; }
-        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .btn-add { width: 100%; padding: 12px; background: #111; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; }
-        .emotion-card { display: flex; align-items: center; background: #fff; padding: 8px; margin-top: 5px; border: 1px solid #f0f0f0; border-radius: 4px; font-size: 0.75rem; }
-        .remove-btn { margin-left: auto; color: #ff4444; cursor: pointer; font-weight: bold; }
-        h2 { font-size: 1rem; border-bottom: 2px solid #111; padding-bottom: 10px; margin-top: 0; }
-        .desc { font-size: 0.6rem; color: #999; margin-top: 3px; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #fff; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        #sidebar { width: 400px; background: #f8f9fa; padding: 20px; border-right: 1px solid #eee; overflow-y: auto; }
+        #viewer { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        canvas { background: #fff; box-shadow: 0 0 50px rgba(0,0,0,0.02); border-radius: 50%; }
+        .controls { margin-bottom: 20px; border-bottom: 2px solid #111; padding-bottom: 15px; }
+        .btn { width: 100%; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; margin-bottom: 8px; transition: 0.2s; }
+        .btn-primary { background: #111; color: #fff; }
+        .btn-outline { background: #fff; border: 1px solid #111; color: #111; }
+        .emotion-card { display: flex; align-items: center; background: #fff; padding: 8px; margin-top: 5px; border: 1px solid #eee; font-size: 0.75rem; border-radius: 4px; }
+        h2 { font-size: 1.2rem; margin: 0 0 10px 0; }
+        .label-grid { color: #ccc; font-size: 0.65rem; font-weight: bold; letter-spacing: 2px; margin-top: 20px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2>Vector Calibration</h2>
-    <div class="input-group">
-        <label>Affective Label</label>
-        <input type="text" id="name" placeholder="e.g. Annoyed">
+    <div class="controls">
+        <h2>UARL Engine</h2>
+        <button class="btn btn-primary" onclick="loadAllData()">INITIALIZE EMPIRICAL SET</button>
+        <button class="btn btn-outline" onclick="toggleRotation()">ROTATE 45° (COMPLEMENTARY)</button>
     </div>
-    <div class="input-group">
-        <label>Angle (θ: 0-360°)</label>
-        <input type="number" id="angle" step="0.1">
-    </div>
-    <div class="input-group">
-        <label>Consensus (P: 0.71 - 0.97)</label>
-        <input type="number" id="p_val" value="0.85" step="0.01">
-    </div>
-    <div class="input-group">
-        <label>Spread (Table 2 Categories: 2-6)</label>
-        <input type="number" id="spread" value="3" min="1" max="8">
-        <div class="desc">Defines the radius of the membership set.</div>
-    </div>
-    <div class="input-group">
-        <label>Color</label>
-        <input type="color" id="color" value="#666666">
-    </div>
-    <button class="btn-add" onclick="addEmotion()">PLOT TO DISK</button>
-
-    <div id="list" style="margin-top: 20px;"></div>
-    <button onclick="saveImage()" style="width:100%; margin-top:20px; background:none; border:1px solid #111; padding:10px; cursor:pointer; font-weight:bold; border-radius:6px;">DOWNLOAD MAP (.PNG)</button>
+    <div id="list"></div>
 </div>
 
 <div id="viewer">
     <canvas id="canvas"></canvas>
+    <div class="label-grid">Perceptual Affective Field</div>
 </div>
 
+<script src="affective_data.js"></script>
 <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    let emotions = [];
+    let activeEmotions = [];
+    let isRotated = false;
 
     function resize() {
-        const size = Math.min(window.innerWidth - 450, window.innerHeight - 150);
+        const size = Math.min(window.innerWidth - 460, window.innerHeight - 150);
         canvas.width = size; canvas.height = size;
         draw();
     }
-    window.onresize = resize; resize();
+    window.onresize = resize;
+    resize();
 
-    function addEmotion() {
-        emotions.push({
-            id: Date.now(),
-            name: document.getElementById('name').value || '?',
-            angle: parseFloat(document.getElementById('angle').value),
-            p: parseFloat(document.getElementById('p_val').value),
-            spread: parseFloat(document.getElementById('spread').value),
-            color: document.getElementById('color').value,
-            visible: true
-        });
-        updateUI(); draw();
+    function loadAllData() {
+        activeEmotions = AFFECTIVE_DATA.map(d => ({ ...d, visible: true, id: Math.random() }));
+        updateUI();
+        draw();
     }
+
+    function toggleRotation() { isRotated = !isRotated; draw(); }
 
     function updateUI() {
         const list = document.getElementById('list');
         list.innerHTML = '';
-        emotions.forEach(e => {
+        activeEmotions.forEach(e => {
             const div = document.createElement('div');
             div.className = 'emotion-card';
             div.style.borderLeft = `4px solid ${e.color}`;
             div.innerHTML = `
-                <input type="checkbox" ${e.visible ? 'checked' : ''} onchange="toggle(${e.id})">
-                <span style="flex:1; margin-left:8px;"><strong>${e.name}</strong></span>
-                <span style="color:#999">${e.angle}° | S:${e.spread}</span>
-                <span class="remove-btn" onclick="remove(${e.id})">×</span>`;
+                <input type="checkbox" checked onchange="toggleVis(${e.id})">
+                <span style="flex:1; margin-left:10px;"><strong>${e.name}</strong></span>
+                <span style="color:#999">${e.angle}°</span>
+            `;
             list.appendChild(div);
         });
     }
 
-    function toggle(id) { const e = emotions.find(x => x.id === id); e.visible = !e.visible; draw(); }
-    function remove(id) { emotions = emotions.filter(x => x.id !== id); updateUI(); draw(); }
-
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const cx = canvas.width / 2; const cy = canvas.height / 2;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
         const radius = canvas.width * 0.42;
 
-        // Draw Global Circumplex Infrastructure
+        // 1. Draw Grid
         ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx-radius, cy); ctx.lineTo(cx+radius, cy); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx, cy-radius); ctx.lineTo(cx, cy+radius); ctx.stroke();
 
-        // Blending Mode for Heatmap Overlap
-        ctx.globalCompositeOperation = 'multiply';
+        if (isRotated) {
+            ctx.setLineDash([5, 5]); ctx.strokeStyle = '#f8e8e8';
+            for (let i = 0; i < 4; i++) {
+                let ang = (Math.PI/4) + (i * Math.PI/2);
+                ctx.beginPath(); ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + Math.cos(ang)*radius, cy + Math.sin(ang)*radius); ctx.stroke();
+            }
+            ctx.setLineDash([]);
+        }
 
-        emotions.forEach(e => {
+        // 2. Draw Fuzzy Sets (Multiply Blend Mode)
+        ctx.globalCompositeOperation = 'multiply';
+        activeEmotions.forEach(e => {
             if (!e.visible) return;
-            const rad = (e.angle * Math.PI) / 180;
+            const rad = (e.angle * Math.PI) / 180 * -1;
             const vLen = radius * e.p;
             const tx = cx + Math.cos(rad) * vLen;
             const ty = cy + Math.sin(rad) * vLen;
+            const fuzzRadius = e.spread * 15;
 
-            // Fuzziness Mapping: spread categories * pixels
-            const fuzzRadius = e.spread * 15; 
-
-            // 1. Draw Membership Gradient (Fuzzy Set)
+            // Membership Gradient
             const grad = ctx.createRadialGradient(tx, ty, 0, tx, ty, fuzzRadius);
             grad.addColorStop(0, e.color + '66');
             grad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = grad;
             ctx.beginPath(); ctx.arc(tx, ty, fuzzRadius, 0, Math.PI*2); ctx.fill();
 
-            // 2. NEW: Draw Dotted Boundary Line to show "Transition Zone"
-            ctx.strokeStyle = e.color + '99';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([3, 3]);
+            // Boundary Dotted Line
+            ctx.strokeStyle = e.color + '44'; ctx.setLineDash([2, 3]);
             ctx.beginPath(); ctx.arc(tx, ty, fuzzRadius, 0, Math.PI*2); ctx.stroke();
             ctx.setLineDash([]);
         });
 
-        // Overlay Mode for Labels and Vectors
+        // 3. Draw Points and Labels
         ctx.globalCompositeOperation = 'source-over';
-        emotions.forEach(e => {
+        activeEmotions.forEach(e => {
             if (!e.visible) return;
-            const rad = (e.angle * Math.PI) / 180;
+            const rad = (e.angle * Math.PI) / 180 * -1;
             const vLen = radius * e.p;
             const tx = cx + Math.cos(rad) * vLen;
             const ty = cy + Math.sin(rad) * vLen;
 
-            // Center Point
             ctx.fillStyle = e.color;
-            ctx.beginPath(); ctx.arc(tx, ty, 3, 0, Math.PI*2); ctx.fill();
-
-            // Label
-            ctx.fillStyle = '#000'; ctx.font = 'bold 11px Inter';
-            ctx.fillText(e.name.toUpperCase(), tx + 12, ty - 5);
+            ctx.beginPath(); ctx.arc(tx, ty, 4, 0, Math.PI*2); ctx.fill();
+            
+            ctx.fillStyle = '#000'; ctx.font = 'bold 10px Inter';
+            ctx.fillText(e.name.toUpperCase(), tx + 10, ty - 5);
         });
     }
 
     function saveImage() {
         const link = document.createElement('a');
-        link.download = 'uarl_overlap_boundaries.png';
+        link.download = 'uarl_perceptual_disk.png';
         link.href = canvas.toDataURL();
         link.click();
     }
 </script>
+
 </body>
 </html>
