@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>UARL Perceptual Mapper (Academic Edition)</title>
+    <title>Circumplex Model of Affect</title>
     <style>
         body { font-family: 'Helvetica', 'Arial', sans-serif; background: #ffffff; color: #111; display: flex; padding: 0; margin: 0; height: 100vh; overflow: hidden; }
         #sidebar { width: 380px; background: #f7f7f7; padding: 25px; border-right: 1px solid #ddd; overflow-y: auto; height: 100%; z-index: 10; }
@@ -50,7 +50,7 @@
 
     <h2 style="margin-top: 40px;">Active Dictionary</h2>
     <div id="emotionList"></div>
-    <button class="btn-save" onclick="saveImage()">EXPORT FOR MANIFESTO (.PNG)</button>
+    <button class="btn-save" onclick="saveImage()">DOWNLOAD (.PNG)</button>
 </div>
 
 <div id="viewer">
@@ -187,7 +187,7 @@
 
     function saveImage() {
         const link = document.createElement('a');
-        link.download = 'lingua_robotica_map.png';
+        link.download = 'russell.png';
         link.href = canvas.toDataURL();
         link.click();
     }
