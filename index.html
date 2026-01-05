@@ -2,58 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Circumplex Model of Affect</title>
+    <title>UARL: Affective Overlap Engine</title>
     <style>
-        body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #111; display: flex; margin: 0; height: 100vh; }
-        #sidebar { width: 380px; background: #f9f9f9; padding: 25px; border-right: 1px solid #ddd; overflow-y: auto; height: 100%; box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff; color: #111; display: flex; margin: 0; height: 100vh; }
+        #sidebar { width: 380px; background: #fcfcfc; padding: 25px; border-right: 1px solid #eee; overflow-y: auto; height: 100%; box-sizing: border-box; }
         #viewer { flex-grow: 1; display: flex; justify-content: center; align-items: center; background: #fff; }
         canvas { background: #fff; }
-        .input-group { margin-bottom: 12px; background: #fff; padding: 12px; border: 1px solid #eee; border-radius: 6px; }
-        label { display: block; font-size: 0.65rem; font-weight: 800; color: #555; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
-        input[type="text"], input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; }
-        .btn-add { width: 100%; padding: 14px; background: #000; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
-        .emotion-card { display: flex; align-items: center; background: #fff; padding: 10px; margin-top: 8px; border: 1px solid #eee; border-left: 5px solid var(--c); font-size: 0.8rem; }
-        .remove-btn { margin-left: auto; color: #ff0000; cursor: pointer; font-weight: bold; }
-        .desc { font-size: 0.6rem; color: #999; margin-top: 4px; line-height: 1.2; }
+        .input-group { margin-bottom: 12px; background: #fff; padding: 12px; border: 1px solid #f0f0f0; border-radius: 8px; }
+        label { display: block; font-size: 0.65rem; font-weight: 800; color: #777; text-transform: uppercase; margin-bottom: 5px; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; }
+        .btn-add { width: 100%; padding: 14px; background: #111; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; }
+        .emotion-card { display: flex; align-items: center; background: #fff; padding: 10px; margin-top: 8px; border: 1px solid #f0f0f0; border-left: 5px solid var(--c); font-size: 0.8rem; }
+        .remove-btn { margin-left: auto; color: #ff4444; cursor: pointer; }
+        .desc { font-size: 0.6rem; color: #aaa; margin-top: 4px; line-height: 1.3; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2 style="font-size: 1rem; border-bottom: 2px solid #000; padding-bottom: 10px;">Gaussian Distribution Input</h2>
+    <h2 style="font-size: 1.1rem; border-bottom: 2px solid #111; padding-bottom: 10px;">Affective Parameters</h2>
     
     <div class="input-group">
-        <label>Affective Label</label>
+        <label>Emotion Label</label>
         <input type="text" id="name" placeholder="e.g. Happy">
     </div>
 
     <div class="input-group">
-        <label>Angle (θ: 0-360°)</label>
+        <label>Angular Coordinate (0-360°)</label>
         <input type="number" id="angle" value="0">
-        <div class="desc">Quality of emotion (0°=Pleasure).</div>
+        <div class="desc">The "Hue" or Quality. (0°=Pleasure, 90°=Arousal)</div>
     </div>
 
     <div class="input-group">
-        <label>Vector Length (P: 0.7 - 1.0)</label>
+        <label>Vector Length (P: 0.0 - 1.0)</label>
         <input type="number" id="p_val" value="0.85" step="0.01">
-        <div class="desc">Distance from center (Consensus). High P = Outer edge.</div>
+        <div class="desc">Intensity/Consensus. Higher P = Near Perimeter.</div>
     </div>
 
     <div class="input-group">
-        <label>Spread (σ: Standard Deviation)</label>
-        <input type="number" id="sigma" value="25" min="5" max="90">
-        <div class="desc">Derived from Table 2. High σ = Spread across many categories (Fuzzy). Low σ = Concentrated (Sharp).</div>
+        <label>Spread (Sigma / Table 2 Frequency)</label>
+        <input type="number" id="sigma" value="40" min="5" max="150">
+        <div class="desc">The Radius of the Fuzzy Set. Determines overlap width.</div>
     </div>
 
     <div class="input-group">
-        <label>Color (Frequency Saturation)</label>
-        <input type="color" id="color" value="#ff4400">
+        <label>Spectral Color</label>
+        <input type="color" id="color" value="#ffcc00">
     </div>
 
-    <button class="btn-add" onclick="addEmotion()">PLOT HEAT MAP</button>
+    <button class="btn-add" onclick="addEmotion()">PROJECT INTO DISK</button>
 
     <div id="list" style="margin-top: 20px;"></div>
-    <button onclick="saveImage()" style="width:100%; margin-top:20px; background:none; border:1px solid #000; padding:10px; cursor:pointer; font-weight:bold;">DOWNLOAD MAP (.PNG)</button>
+    <button onclick="saveImage()" style="width:100%; margin-top:20px; background:none; border:1px solid #111; padding:10px; cursor:pointer; font-weight:bold; border-radius:6px;">EXPORT MAP (.PNG)</button>
 </div>
 
 <div id="viewer">
@@ -73,7 +73,7 @@
     window.onresize = resize; resize();
 
     function addEmotion() {
-        const e = {
+        emotions.push({
             id: Date.now(),
             name: document.getElementById('name').value || '?',
             angle: parseFloat(document.getElementById('angle').value),
@@ -81,8 +81,7 @@
             sigma: parseFloat(document.getElementById('sigma').value),
             color: document.getElementById('color').value,
             visible: true
-        };
-        emotions.push(e);
+        });
         updateUI(); draw();
     }
 
@@ -93,10 +92,11 @@
             const div = document.createElement('div');
             div.className = 'emotion-card';
             div.style.setProperty('--c', e.color);
-            div.innerHTML = `<input type="checkbox" ${e.visible ? 'checked' : ''} onchange="toggle(${e.id})">
-                <span style="flex:1; margin-left:8px;"><strong>${e.name}</strong></span>
-                <span style="color:#999">θ:${e.angle}° σ:${e.sigma}</span>
-                <span class="remove-btn" onclick="remove(${e.id})">×</span>`;
+            div.innerHTML = `
+                <input type="checkbox" ${e.visible ? 'checked' : ''} onchange="toggle(${e.id})">
+                <span style="flex:1; margin-left:10px;"><strong>${e.name}</strong></span>
+                <span style="color:#bbb; font-size:0.7rem">${e.angle}°</span>
+                <span class="remove-btn" onclick="remove(${e.id})" style="margin-left:10px;">×</span>`;
             list.appendChild(div);
         });
     }
@@ -109,53 +109,58 @@
         const cx = canvas.width / 2; const cy = canvas.height / 2;
         const radius = canvas.width * 0.42;
 
-        // Draw Grid
-        ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth = 1;
+        // 1. DRAW INFRASTRUCTURE (The "Disk")
+        ctx.strokeStyle = '#f5f5f5'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx-radius, cy); ctx.lineTo(cx+radius, cy); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx, cy-radius); ctx.lineTo(cx, cy+radius); ctx.stroke();
 
+        // 2. DRAW OVERLAPPING HEATMAPS
+        // We use 'multiply' or 'screen' blend modes to show real intersection
+        ctx.globalCompositeOperation = 'multiply'; 
+
         emotions.forEach(e => {
             if (!e.visible) return;
-            // Russell is counter-clockwise, 0 at East.
+            // Russell is counter-clockwise from East (Pleasure)
             const rad = (e.angle * Math.PI) / 180 * -1;
             const vLen = radius * e.p;
             const tx = cx + Math.cos(rad) * vLen;
             const ty = cy + Math.sin(rad) * vLen;
 
-            // DRAW GAUSSIAN HEAT MAP
-            // Instead of a wedge, we use multiple radial gradients to simulate a "cloud"
-            // The radius of the cloud is tied to Sigma (Frequency Spread)
-            const cloudRadius = e.sigma * (radius/100) * 1.5;
-
-            const grad = ctx.createRadialGradient(tx, ty, 0, tx, ty, cloudRadius);
-            grad.addColorStop(0, e.color + '88'); // Core membership (0.5 opacity)
-            grad.addColorStop(0.3, e.color + '44'); // Transition
-            grad.addColorStop(1, 'transparent'); // Membership 0.0
+            // Membership Gradient (1.0 to 0.0)
+            const grad = ctx.createRadialGradient(tx, ty, 0, tx, ty, e.sigma);
+            grad.addColorStop(0, e.color + 'aa'); // High saturation at core
+            grad.addColorStop(0.5, e.color + '44'); // Gradual transition
+            grad.addColorStop(1, 'rgba(255,255,255,0)'); // Nonmembership boundary
 
             ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(tx, ty, cloudRadius, 0, Math.PI*2);
+            ctx.arc(tx, ty, e.sigma, 0, Math.PI*2);
             ctx.fill();
+        });
 
-            // Vector Line (Reference)
-            ctx.strokeStyle = e.color; ctx.setLineDash([2, 4]);
-            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tx, ty); ctx.stroke();
-            ctx.setLineDash([]);
+        // 3. DRAW VECTOR LABELS (Overlay mode)
+        ctx.globalCompositeOperation = 'source-over';
+        emotions.forEach(e => {
+            if (!e.visible) return;
+            const rad = (e.angle * Math.PI) / 180 * -1;
+            const vLen = radius * e.p;
+            const tx = cx + Math.cos(rad) * vLen;
+            const ty = cy + Math.sin(rad) * vLen;
 
-            // Center Point (Intensity Peak)
+            // Center consensus point
             ctx.fillStyle = e.color;
             ctx.beginPath(); ctx.arc(tx, ty, 3, 0, Math.PI*2); ctx.fill();
 
-            // Label
-            ctx.fillStyle = '#000'; ctx.font = 'bold 11px Inter';
-            ctx.fillText(e.name.toUpperCase(), tx + 10, ty - 10);
+            // Bold Label
+            ctx.fillStyle = '#000'; ctx.font = 'bold 12px Arial';
+            ctx.fillText(e.name.toUpperCase(), tx + 12, ty - 5);
         });
     }
 
     function saveImage() {
         const link = document.createElement('a');
-        link.download = 'map.png';
+        link.download = 'affective_overlap_map.png';
         link.href = canvas.toDataURL();
         link.click();
     }
